@@ -46,8 +46,14 @@ It allows you to select a source and target profile, preview their active mods, 
 
 - Profiles are decrypted in memory
 - Active mods are extracted into an internal data structure
-- No temporary decrypted files are kept
 - Only the final modified file is saved
+
+---
+
+## 🧭 Planned Features
+- 🔀 Manual mod reordering
+- ➕ Combine mod lists from two profiles
+- 🎛️ Combo presets for quick profile switching
 
 ---
 
@@ -79,6 +85,6 @@ Use at your own risk. Always keep backups of your profiles.
 
 ## 📜 License
 
-This project is released under the **MIT License**.  
+This project is released under the **GPL-3.0**.  
 See `LICENSE` file for details.
 

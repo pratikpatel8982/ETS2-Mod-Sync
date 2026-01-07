@@ -1,5 +1,8 @@
+import os
 import sys
 from pathlib import Path
+
+import resources_rc  # DO NOT REMOVE (registers Qt resources)
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
@@ -24,11 +27,9 @@ from mod_sync import (
     replace_mods_in_text,
 )
 
-
 class ModSyncApp(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowIcon(QIcon("icons/app.ico"))
         self.setWindowTitle("ETS2 Mod Sync")
         self.setFixedSize(900, 420)
 
@@ -70,7 +71,7 @@ class ModSyncApp(QWidget):
         layout = QGridLayout(self)
 
         about_btn = QToolButton()
-        about_btn.setIcon(QIcon("icons/info.png"))
+        about_btn.setIcon(QIcon(":/icons/info.png"))
         about_btn.setIconSize(QSize(22, 22))
         about_btn.setToolTip("About ETS2 Mod Sync")
         about_btn.setFixedSize(26, 26)
@@ -239,6 +240,7 @@ class ModSyncApp(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    app.setWindowIcon(QIcon(":/icons/app.ico"))
     window = ModSyncApp()
     window.show()
     sys.exit(app.exec())

@@ -60,9 +60,9 @@ class ModSyncApp(QWidget):
         self.target_table = self._create_table()
 
         self._build_ui()
+        self._update_buttons_state()
 
     # ---------- UI ----------
-
     def _create_table(self):
         table = QTableWidget(0, 3)
         table.setHorizontalHeaderLabels(["#", "Mod ID", "Mod Name"])
@@ -106,6 +106,15 @@ class ModSyncApp(QWidget):
         self.source_edit = QLineEdit()
         self.source_edit.setReadOnly(True)
 
+        self.source_badge = QLabel("Source: —")
+        self.source_badge.setAlignment(Qt.AlignLeft)
+        self.source_badge.setStyleSheet("""
+            QLabel {
+                color: #aaa;
+                font-size: 11px;
+            }
+        """)
+
         load_profile_btn = QPushButton("Load Profile")
         load_profile_btn.setToolTip(
             "Load an ETS2 profile (.sii) as the source mod list"
@@ -118,17 +127,18 @@ class ModSyncApp(QWidget):
         )
         load_xml_btn.clicked.connect(self.load_source_xml)
 
-        export_btn = QPushButton("Export Mods (XML)")
-        export_btn.setToolTip(
+        self.export_btn = QPushButton("Export Mods (XML)")
+        self.export_btn.setToolTip(
             "Export the current source mod list to an XML file"
         )
-        export_btn.clicked.connect(self.export_mods)
+        self.export_btn.clicked.connect(self.export_mods)
 
         source_layout.addWidget(self.source_edit, 0, 0, 1, 2)
-        source_layout.addWidget(load_profile_btn, 1, 0)
-        source_layout.addWidget(load_xml_btn, 1, 1)
-        source_layout.addWidget(self.source_table, 2, 0, 1, 2)
-        source_layout.addWidget(export_btn, 3, 0, 1, 2)
+        source_layout.addWidget(self.source_badge, 1, 0, 1, 2)
+        source_layout.addWidget(load_profile_btn, 2, 0)
+        source_layout.addWidget(load_xml_btn, 2, 1)
+        source_layout.addWidget(self.source_table, 3, 0, 1, 2)
+        source_layout.addWidget(self.export_btn, 4, 0, 1, 2)
 
         # ========= TARGET =========
         target_box = QGroupBox("Target Profile")
@@ -137,66 +147,66 @@ class ModSyncApp(QWidget):
         self.target_edit = QLineEdit()
         self.target_edit.setReadOnly(True)
 
+        self.target_badge = QLabel("Target: —")
+        self.target_badge.setAlignment(Qt.AlignLeft)
+        self.target_badge.setStyleSheet("""
+            QLabel {
+                color: #aaa;
+                font-size: 11px;
+            }
+        """)
+
         load_target_btn = QPushButton("Load Profile")
         load_target_btn.setToolTip(
             "Load an ETS2 profile (.sii) that will receive the source mods"
         )
         load_target_btn.clicked.connect(self.load_target_profile)
 
-        target_layout.addWidget(self.target_edit, 0, 0)
-        target_layout.addWidget(load_target_btn, 0, 1)
-        target_layout.addWidget(self.target_table, 1, 0, 1, 2)
+        target_layout.addWidget(self.target_edit, 0, 0, 1, 2)
+        target_layout.addWidget(self.target_badge, 1, 0, 1, 2)
+        target_layout.addWidget(load_target_btn, 2, 0, 1, 2)
+        target_layout.addWidget(self.target_table, 3, 0, 1, 2)
+
 
         # ========= PLACE SOURCE / TARGET =========
         layout.addWidget(source_box, 1, 0, 1, 2)
         layout.addWidget(target_box, 1, 2, 1, 2)
 
         # ========= SYNC =========
-        sync_btn = QPushButton("Sync Mods")
-        sync_btn.setToolTip(
+        self.sync_btn = QPushButton("Sync Mods")
+        self.sync_btn.setToolTip(
             "Apply the source mod list to the target profile and save the result"
         )
-        sync_btn.clicked.connect(self.run_sync)
-        sync_btn.setMinimumHeight(36)
-        sync_btn.setDefault(True)
+        self.sync_btn.clicked.connect(self.run_sync)
+        self.sync_btn.setMinimumHeight(36)
+        self.sync_btn.setDefault(True)
 
-        layout.addWidget(sync_btn, 2, 0, 1, 4)
+        layout.addWidget(self.sync_btn, 2, 0, 1, 4)
 
-    def _browse_button(self, is_source):
-        btn = QPushButton("Browse…")
-        btn.clicked.connect(lambda: self.browse_profile(is_source))
-        return btn
+    def _update_buttons_state(self):
+        has_source = bool(self.source_mods)
+        has_target = bool(self.target_text)
+
+        self.export_btn.setEnabled(has_source)
+        self.sync_btn.setEnabled(has_source and has_target)
+
+    # ---------- About ----------
+    def show_about(self):
+        QMessageBox.information(
+            self,
+            f"About {APP_NAME}",
+            (
+                f"<b>{APP_NAME}</b><br>"
+                f"Version {APP_VERSION}<br><br>"
+                "Sync active mods between ETS2 profiles.<br><br>"
+                "<b>Author</b><br>"
+                f"{APP_AUTHOR}<br><br>"
+                "<b>Credits</b><br>"
+                "SII_Decrypt.dll by TheLazyTomcat"
+            )
+        )
 
     # ---------- Logic ----------
-
-    def browse_profile(self, is_source: bool):
-        path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Select profile.sii",
-            "",
-            "SII files (*.sii)",
-        )
-        if not path:
-            return
-
-        try:
-            text = self.decryptor.decrypt_to_string(path)
-            mods = get_mods_from_decrypted_text(text)
-        except Exception as e:
-            QMessageBox.critical(self, "Error", str(e))
-            return
-
-        if is_source:
-            self.source_edit.setText(path)
-            self.source_text = text
-            self.source_mods = mods
-            self.populate_table(self.source_table, mods)
-        else:
-            self.target_edit.setText(path)
-            self.target_text = text
-            self.target_mods = mods
-            self.populate_table(self.target_table, mods)
-
     def populate_table(self, table: QTableWidget, mods: list[str]):
         table.setRowCount(0)
 
@@ -221,11 +231,14 @@ class ModSyncApp(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
             return
+        
+        target_path = Path(self.target_edit.text())
+        default_path = target_path.parent / "profile.sii"
 
         out_path, _ = QFileDialog.getSaveFileName(
             self,
             "Save modified profile",
-            "profile_with_synced_mods.sii",
+            str(default_path),
             "SII files (*.sii)",
         )
         if not out_path:
@@ -238,28 +251,96 @@ class ModSyncApp(QWidget):
             "Success",
             f"Copied {len(self.source_mods)} mods from Source to Target.\n\nSaved to:\n{out_path}",
         )
+    # ---------- File Helpers ----------
+    def _load_mods_from_file(self, path: str):
+        """
+        Load mods from either XML or SII.
+        Returns: (mods, text_or_none)
+        """
+        if path.lower().endswith(".xml"):
+            mods = import_mods_from_xml(path)
+            return mods, None
 
-    # ---------- About ----------
+        if path.lower().endswith(".sii"):
+            text = self.decryptor.decrypt_to_string(path)
+            mods = get_mods_from_decrypted_text(text)
+            return mods, text
 
-    def show_about(self):
-        QMessageBox.information(
-            self,
-            f"About {APP_NAME}",
-            (
-                f"<b>{APP_NAME}</b><br>"
-                f"Version {APP_VERSION}<br><br>"
-                "Sync active mods between ETS2 profiles.<br><br>"
-                "<b>Author</b><br>"
-                f"{APP_AUTHOR}<br><br>"
-                "<b>Credits</b><br>"
-                "SII_Decrypt.dll by TheLazyTomcat"
-            )
+        raise ValueError("Unsupported file type")
+    
+    def _apply_source(self, mods, text, path):
+        self.source_edit.setText(path)
+        self.source_mods = mods
+        self.source_text = text
+        self.populate_table(self.source_table, mods)
+        source_type = "Profile" if text else "XML"
+        self.source_badge.setText(
+            f'Source: <span style="color:#4CAF50;"><b>{source_type}</b></span>'
         )
+        self._update_buttons_state()
 
-    # ---------- XML Helpers ----------
+
+    def _apply_target(self, mods: list[str], text: str, path: str):
+        self.target_edit.setText(path)
+        self.target_mods = mods
+        self.target_text = text
+        self.populate_table(self.target_table, mods)
+        self.target_badge.setText(
+            'Target: <span style="color:#F44336;"><b>Profile</b></span>'
+        )
+        self._update_buttons_state()
+
+    def load_source_profile(self):
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Load Source Profile", "", "ETS2 Profile (*.sii)"
+        )
+        if not path:
+            return
+
+        try:
+            mods, text = self._load_mods_from_file(path)
+        except Exception as e:
+            QMessageBox.critical(self, "Error", str(e))
+            return
+
+        self._apply_source(mods, text, path)
+
+    def load_source_xml(self):
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Load Source XML", "", "XML Mod List (*.xml)"
+        )
+        if not path:
+            return
+
+        try:
+            mods, text = self._load_mods_from_file(path)
+        except Exception as e:
+            QMessageBox.critical(self, "Error", str(e))
+            return
+
+        if not mods:
+            QMessageBox.warning(self, "Empty", "XML contains no mods.")
+            return
+
+        self._apply_source(mods, text, path)
+
+    def load_target_profile(self):
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Load Target Profile", "", "ETS2 Profile (*.sii)"
+        )
+        if not path:
+            return
+
+        try:
+            mods, text = self._load_mods_from_file(path)
+        except Exception as e:
+            QMessageBox.critical(self, "Error", str(e))
+            return
+
+        self._apply_target(mods, text, path)
 
     def import_mods(self):
-        path, selected_filter = QFileDialog.getOpenFileName(
+        path, _ = QFileDialog.getOpenFileName(
             self,
             "Import Mods (XML or Profile)",
             "",
@@ -269,17 +350,7 @@ class ModSyncApp(QWidget):
             return
 
         try:
-            if path.lower().endswith(".xml"):
-                mods = import_mods_from_xml(path)
-
-            elif path.lower().endswith(".sii"):
-                text = self.decryptor.decrypt_to_string(path)
-                mods = get_mods_from_decrypted_text(text)
-
-            else:
-                QMessageBox.warning(self, "Unsupported", "Unsupported file type.")
-                return
-
+            mods, text = self._load_mods_from_file(path)
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
             return
@@ -288,129 +359,37 @@ class ModSyncApp(QWidget):
             QMessageBox.warning(self, "Empty", "No mods found.")
             return
 
-        # ALWAYS apply to SOURCE
-        self.source_mods = mods
-        self.populate_table(self.source_table, mods)
+        self._apply_source(mods, text, path)
 
         QMessageBox.information(
-            self,
-            "Imported",
-            f"Imported {len(mods)} mods into Source.",
+            self, "Imported", f"Imported {len(mods)} mods into Source."
         )
 
     def export_mods(self):
         if not self.source_mods:
             QMessageBox.warning(self, "No Mods", "No source mods to export.")
             return
+        
+        default_path = Path.cwd() / "modlist.xml"
 
-        path, selected_filter = QFileDialog.getSaveFileName(
+        out_path, _ = QFileDialog.getSaveFileName(
             self,
-            "Export Mods (XML or Profile)",
-            "modlist.xml",
-            "XML Mod List (*.xml);;ETS2 Profile (*.sii)",
+            "Export Mods",
+            str(default_path),
+            "XML Mod List (*.xml)",
         )
-        if not path:
+        if not out_path:
             return
 
         try:
-            if path.lower().endswith(".xml"):
-                export_mods_to_xml(self.source_mods, path)
-
-            elif path.lower().endswith(".sii"):
-                if not self.target_text:
-                    QMessageBox.warning(
-                        self,
-                        "Missing Target",
-                        "Load a target profile to export mods into a profile.",
-                    )
-                    return
-
-                new_text = replace_mods_in_text(self.target_text, self.source_mods)
-                Path(path).write_text(new_text, encoding="utf-8")
-
-            else:
-                QMessageBox.warning(self, "Unsupported", "Unsupported file type.")
-                return
-
+            export_mods_to_xml(self.source_mods, out_path)
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
             return
 
         QMessageBox.information(
-            self,
-            "Exported",
-            f"Exported {len(self.source_mods)} mods.",
+            self, "Exported", f"Exported {len(self.source_mods)}  to:\n\n{out_path}"
         )
-
-    def load_source_profile(self):
-        path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Load Source Profile",
-            "",
-            "ETS2 Profile (*.sii)",
-        )
-        if not path:
-            return
-
-        try:
-            text = self.decryptor.decrypt_to_string(path)
-            mods = get_mods_from_decrypted_text(text)
-        except Exception as e:
-            QMessageBox.critical(self, "Error", str(e))
-            return
-
-        self.source_edit.setText(path)
-        self.source_text = text
-        self.source_mods = mods
-        self.populate_table(self.source_table, mods)
-
-
-    def load_source_xml(self):
-        path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Load Source XML",
-            "",
-            "XML Mod List (*.xml)",
-        )
-        if not path:
-            return
-
-        try:
-            mods = import_mods_from_xml(path)
-        except Exception as e:
-            QMessageBox.critical(self, "Error", str(e))
-            return
-
-        if not mods:
-            QMessageBox.warning(self, "Empty", "XML contains no mods.")
-            return
-
-        self.source_edit.setText(path)
-        self.source_text = None  # IMPORTANT: XML has no profile text
-        self.source_mods = mods
-        self.populate_table(self.source_table, mods)
-    
-    def load_target_profile(self):
-        path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Load Target Profile",
-            "",
-            "ETS2 Profile (*.sii)",
-        )
-        if not path:
-            return
-
-        try:
-            text = self.decryptor.decrypt_to_string(path)
-            mods = get_mods_from_decrypted_text(text)
-        except Exception as e:
-            QMessageBox.critical(self, "Error", str(e))
-            return
-
-        self.target_edit.setText(path)
-        self.target_text = text
-        self.target_mods = mods
-        self.populate_table(self.target_table, mods)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

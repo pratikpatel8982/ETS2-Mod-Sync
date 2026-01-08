@@ -1,7 +1,6 @@
 # sii_parser.py
 import re
 
-
 def extract_profile_block(text: str) -> str:
     match = re.search(r"profile\s*:\s*[^{]+\{", text)
     if not match:

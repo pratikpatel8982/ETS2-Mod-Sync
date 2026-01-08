@@ -6,7 +6,6 @@ from pathlib import Path
 
 DLL_NAME = "SII_Decrypt.dll"
 
-
 class SiiDecryptor:
     def __init__(self):
         self.dll = ctypes.WinDLL(os.path.abspath(DLL_NAME))

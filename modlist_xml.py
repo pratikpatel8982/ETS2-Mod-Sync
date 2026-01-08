@@ -1,6 +1,5 @@
 from xml.etree.ElementTree import Element, SubElement, ElementTree
 
-
 def export_mods_to_xml(mods: list[str], path: str):
     root = Element("ets2_modlist", version="1.0")
 

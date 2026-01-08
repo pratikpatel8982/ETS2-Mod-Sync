@@ -27,6 +27,11 @@ from mod_sync import (
     replace_mods_in_text,
 )
 
+from modlist_xml import (
+    export_mods_to_xml,
+    import_mods_from_xml,
+)
+
 class ModSyncApp(QWidget):
     def __init__(self):
         super().__init__()
@@ -37,7 +42,6 @@ class ModSyncApp(QWidget):
         self.decryptor = SiiDecryptor()
 
         # state
-        self.forward = True  # source -> target
         self.source_text = None
         self.target_text = None
         self.source_mods = []
@@ -49,10 +53,6 @@ class ModSyncApp(QWidget):
 
         self.source_table = self._create_table()
         self.target_table = self._create_table()
-
-        self.direction_label = QLabel()
-        self.direction_label.setAlignment(Qt.AlignCenter)
-        self.update_direction_label()
 
         self._build_ui()
 
@@ -89,8 +89,6 @@ class ModSyncApp(QWidget):
 
         layout.addWidget(about_btn, 0, 3, alignment=Qt.AlignRight)
 
-
-
         layout.addWidget(QLabel("Source profile.sii"), 0, 0)
         layout.addWidget(QLabel("Target profile.sii"), 0, 2)
 
@@ -106,16 +104,23 @@ class ModSyncApp(QWidget):
         layout.addWidget(self.source_table, 3, 0, 1, 2)
         layout.addWidget(self.target_table, 3, 2, 1, 2)
 
-        layout.addWidget(self.direction_label, 4, 0, 1, 4)
+        # Bottom buttons layout
 
-        swap_btn = QPushButton("⇄ Swap")
-        swap_btn.clicked.connect(self.swap_direction)
+        import_btn = QPushButton("Import Mods (XML)")
+        export_btn = QPushButton("Export Mods (XML)")
+        
+        import_btn.clicked.connect(self.import_mods)
+        export_btn.clicked.connect(self.export_mods)
 
         sync_btn = QPushButton("Sync Mods")
         sync_btn.clicked.connect(self.run_sync)
 
-        layout.addWidget(swap_btn, 5, 0, 1, 2)
-        layout.addWidget(sync_btn, 5, 2, 1, 2)
+        # Row numbers can be adjusted if needed
+        layout.addWidget(import_btn, 5, 0, 1, 2)
+        layout.addWidget(export_btn, 5, 2, 1, 2)
+
+        layout.addWidget(sync_btn, 6, 0, 1, 4)
+
 
     def _browse_button(self, is_source):
         btn = QPushButton("Browse…")
@@ -163,19 +168,16 @@ class ModSyncApp(QWidget):
             table.setItem(i, 2, QTableWidgetItem(mod_name))
 
     def run_sync(self):
-        if not self.source_text or not self.target_text:
-            QMessageBox.critical(self, "Error", "Please load both profiles.")
+        if not self.source_mods:
+            QMessageBox.critical(self, "Error", "No source mods loaded.")
             return
 
-        if self.forward:
-            src_text, tgt_text = self.source_text, self.target_text
-            src_mods = self.source_mods
-        else:
-            src_text, tgt_text = self.target_text, self.source_text
-            src_mods = self.target_mods
+        if not self.target_text:
+            QMessageBox.critical(self, "Error", "Please load a target profile.")
+            return
 
         try:
-            new_text = replace_mods_in_text(tgt_text, src_mods)
+            new_text = replace_mods_in_text(self.target_text, self.source_mods)
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
             return
@@ -194,31 +196,8 @@ class ModSyncApp(QWidget):
         QMessageBox.information(
             self,
             "Success",
-            f"Copied {len(src_mods)} mods.\n\nSaved to:\n{out_path}",
+            f"Copied {len(self.source_mods)} mods from Source to Target.\n\nSaved to:\n{out_path}",
         )
-
-    # ---------- Direction ----------
-
-    def update_direction_label(self):
-        self.direction_label.setText(
-            "Source  ➜  Target" if self.forward else "Target  ➜  Source"
-        )
-
-    def swap_direction(self):
-        # swap paths
-        self.source_edit.setText(self.target_edit.text())
-        self.target_edit.setText(self.source_edit.text())
-
-        # swap data
-        self.source_text, self.target_text = self.target_text, self.source_text
-        self.source_mods, self.target_mods = self.target_mods, self.source_mods
-
-        # refresh tables
-        self.populate_table(self.source_table, self.source_mods)
-        self.populate_table(self.target_table, self.target_mods)
-
-        self.forward = not self.forward
-        self.update_direction_label()
 
     # ---------- About ----------
 
@@ -235,6 +214,92 @@ class ModSyncApp(QWidget):
                 "<b>Credits</b><br>"
                 "SII_Decrypt.dll by TheLazyTomcat"
             )
+        )
+
+    # ---------- XML Helpers ----------
+
+    def import_mods(self):
+        path, selected_filter = QFileDialog.getOpenFileName(
+            self,
+            "Import Mods (XML or Profile)",
+            "",
+            "XML Mod List (*.xml);;ETS2 Profile (*.sii)",
+        )
+        if not path:
+            return
+
+        try:
+            if path.lower().endswith(".xml"):
+                mods = import_mods_from_xml(path)
+
+            elif path.lower().endswith(".sii"):
+                text = self.decryptor.decrypt_to_string(path)
+                mods = get_mods_from_decrypted_text(text)
+
+            else:
+                QMessageBox.warning(self, "Unsupported", "Unsupported file type.")
+                return
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", str(e))
+            return
+
+        if not mods:
+            QMessageBox.warning(self, "Empty", "No mods found.")
+            return
+
+        # ALWAYS apply to SOURCE
+        self.source_mods = mods
+        self.populate_table(self.source_table, mods)
+
+        QMessageBox.information(
+            self,
+            "Imported",
+            f"Imported {len(mods)} mods into Source.",
+        )
+
+    def export_mods(self):
+        if not self.source_mods:
+            QMessageBox.warning(self, "No Mods", "No source mods to export.")
+            return
+
+        path, selected_filter = QFileDialog.getSaveFileName(
+            self,
+            "Export Mods (XML or Profile)",
+            "modlist.xml",
+            "XML Mod List (*.xml);;ETS2 Profile (*.sii)",
+        )
+        if not path:
+            return
+
+        try:
+            if path.lower().endswith(".xml"):
+                export_mods_to_xml(self.source_mods, path)
+
+            elif path.lower().endswith(".sii"):
+                if not self.target_text:
+                    QMessageBox.warning(
+                        self,
+                        "Missing Target",
+                        "Load a target profile to export mods into a profile.",
+                    )
+                    return
+
+                new_text = replace_mods_in_text(self.target_text, self.source_mods)
+                Path(path).write_text(new_text, encoding="utf-8")
+
+            else:
+                QMessageBox.warning(self, "Unsupported", "Unsupported file type.")
+                return
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", str(e))
+            return
+
+        QMessageBox.information(
+            self,
+            "Exported",
+            f"Exported {len(self.source_mods)} mods.",
         )
 
 

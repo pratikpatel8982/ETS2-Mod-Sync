@@ -3,6 +3,10 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# ETS2
+*.xml
+*.sii
+
 # C extensions
 *.so
 

@@ -17,6 +17,8 @@ from PySide6.QtWidgets import (
     QTableWidget,
     QTableWidgetItem,
     QToolButton,
+    QGroupBox,
+    QHBoxLayout
 )
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import QSize
@@ -24,7 +26,7 @@ from PySide6.QtCore import QSize
 from decryptor import SiiDecryptor
 from mod_sync import (
     get_mods_from_decrypted_text,
-    replace_mods_in_text,
+    replace_mods_in_text
 )
 
 from modlist_xml import (
@@ -38,7 +40,8 @@ class ModSyncApp(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle(f"{APP_NAME} {APP_VERSION}")
-        self.setFixedSize(900, 420)
+        self.resize(1100, 600)
+        self.setMinimumSize(800, 380)
 
         # cached decryptor (DLL loaded once)
         self.decryptor = SiiDecryptor()
@@ -69,60 +72,95 @@ class ModSyncApp(QWidget):
         return table
 
     def _build_ui(self):
-
         layout = QGridLayout(self)
 
+        # ========= TOP BAR (About button) =========
         about_btn = QToolButton()
         about_btn.setIcon(QIcon(":/icons/info.png"))
-        about_btn.setIconSize(QSize(22, 22))
+        about_btn.setIconSize(QSize(25, 25))
         about_btn.setToolTip("About ETS2 Mod Sync")
-        about_btn.setFixedSize(26, 26)
+        about_btn.setFixedSize(25, 25)
         about_btn.setStyleSheet("""
             QToolButton {
-                border-radius: 13px;
-                border: 1px solid #888;
+                border: none;
                 background-color: transparent;
+                padding: 0px;
             }
             QToolButton:hover {
-                background-color: #444;
+                background-color: rgba(255, 255, 255, 0.08);
+                border-radius: 12px;
             }
         """)
         about_btn.clicked.connect(self.show_about)
 
-        layout.addWidget(about_btn, 0, 3, alignment=Qt.AlignRight)
+        top_bar = QHBoxLayout()
+        top_bar.addStretch()
+        top_bar.addWidget(about_btn)
 
-        layout.addWidget(QLabel("Source profile.sii"), 0, 0)
-        layout.addWidget(QLabel("Target profile.sii"), 0, 2)
+        layout.addLayout(top_bar, 0, 0, 1, 4)
 
-        layout.addWidget(self.source_edit, 1, 0)
-        layout.addWidget(self.target_edit, 1, 2)
+        # ========= SOURCE =========
+        source_box = QGroupBox("Source (Profile / XML)")
+        source_layout = QGridLayout(source_box)
 
-        layout.addWidget(self._browse_button(True), 1, 1)
-        layout.addWidget(self._browse_button(False), 1, 3)
+        self.source_edit = QLineEdit()
+        self.source_edit.setReadOnly(True)
 
-        layout.addWidget(QLabel("Source Mods"), 2, 0, 1, 2)
-        layout.addWidget(QLabel("Target Mods"), 2, 2, 1, 2)
+        load_profile_btn = QPushButton("Load Profile")
+        load_profile_btn.setToolTip(
+            "Load an ETS2 profile (.sii) as the source mod list"
+        )
+        load_profile_btn.clicked.connect(self.load_source_profile)
 
-        layout.addWidget(self.source_table, 3, 0, 1, 2)
-        layout.addWidget(self.target_table, 3, 2, 1, 2)
+        load_xml_btn = QPushButton("Load XML")
+        load_xml_btn.setToolTip(
+            "Load a mod list from an XML file as the source"
+        )
+        load_xml_btn.clicked.connect(self.load_source_xml)
 
-        # Bottom buttons layout
-
-        import_btn = QPushButton("Import Mods (XML)")
         export_btn = QPushButton("Export Mods (XML)")
-        
-        import_btn.clicked.connect(self.import_mods)
+        export_btn.setToolTip(
+            "Export the current source mod list to an XML file"
+        )
         export_btn.clicked.connect(self.export_mods)
 
+        source_layout.addWidget(self.source_edit, 0, 0, 1, 2)
+        source_layout.addWidget(load_profile_btn, 1, 0)
+        source_layout.addWidget(load_xml_btn, 1, 1)
+        source_layout.addWidget(self.source_table, 2, 0, 1, 2)
+        source_layout.addWidget(export_btn, 3, 0, 1, 2)
+
+        # ========= TARGET =========
+        target_box = QGroupBox("Target Profile")
+        target_layout = QGridLayout(target_box)
+
+        self.target_edit = QLineEdit()
+        self.target_edit.setReadOnly(True)
+
+        load_target_btn = QPushButton("Load Profile")
+        load_target_btn.setToolTip(
+            "Load an ETS2 profile (.sii) that will receive the source mods"
+        )
+        load_target_btn.clicked.connect(self.load_target_profile)
+
+        target_layout.addWidget(self.target_edit, 0, 0)
+        target_layout.addWidget(load_target_btn, 0, 1)
+        target_layout.addWidget(self.target_table, 1, 0, 1, 2)
+
+        # ========= PLACE SOURCE / TARGET =========
+        layout.addWidget(source_box, 1, 0, 1, 2)
+        layout.addWidget(target_box, 1, 2, 1, 2)
+
+        # ========= SYNC =========
         sync_btn = QPushButton("Sync Mods")
+        sync_btn.setToolTip(
+            "Apply the source mod list to the target profile and save the result"
+        )
         sync_btn.clicked.connect(self.run_sync)
+        sync_btn.setMinimumHeight(36)
+        sync_btn.setDefault(True)
 
-        # Row numbers can be adjusted if needed
-        layout.addWidget(import_btn, 5, 0, 1, 2)
-        layout.addWidget(export_btn, 5, 2, 1, 2)
-
-        layout.addWidget(sync_btn, 6, 0, 1, 4)
-
+        layout.addWidget(sync_btn, 2, 0, 1, 4)
 
     def _browse_button(self, is_source):
         btn = QPushButton("Browse…")
@@ -304,6 +342,75 @@ class ModSyncApp(QWidget):
             f"Exported {len(self.source_mods)} mods.",
         )
 
+    def load_source_profile(self):
+        path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Load Source Profile",
+            "",
+            "ETS2 Profile (*.sii)",
+        )
+        if not path:
+            return
+
+        try:
+            text = self.decryptor.decrypt_to_string(path)
+            mods = get_mods_from_decrypted_text(text)
+        except Exception as e:
+            QMessageBox.critical(self, "Error", str(e))
+            return
+
+        self.source_edit.setText(path)
+        self.source_text = text
+        self.source_mods = mods
+        self.populate_table(self.source_table, mods)
+
+
+    def load_source_xml(self):
+        path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Load Source XML",
+            "",
+            "XML Mod List (*.xml)",
+        )
+        if not path:
+            return
+
+        try:
+            mods = import_mods_from_xml(path)
+        except Exception as e:
+            QMessageBox.critical(self, "Error", str(e))
+            return
+
+        if not mods:
+            QMessageBox.warning(self, "Empty", "XML contains no mods.")
+            return
+
+        self.source_edit.setText(path)
+        self.source_text = None  # IMPORTANT: XML has no profile text
+        self.source_mods = mods
+        self.populate_table(self.source_table, mods)
+    
+    def load_target_profile(self):
+        path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Load Target Profile",
+            "",
+            "ETS2 Profile (*.sii)",
+        )
+        if not path:
+            return
+
+        try:
+            text = self.decryptor.decrypt_to_string(path)
+            mods = get_mods_from_decrypted_text(text)
+        except Exception as e:
+            QMessageBox.critical(self, "Error", str(e))
+            return
+
+        self.target_edit.setText(path)
+        self.target_text = text
+        self.target_mods = mods
+        self.populate_table(self.target_table, mods)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

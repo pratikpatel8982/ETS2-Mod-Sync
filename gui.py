@@ -32,10 +32,12 @@ from modlist_xml import (
     import_mods_from_xml,
 )
 
+from version import APP_NAME, APP_VERSION, APP_AUTHOR
+
 class ModSyncApp(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("ETS2 Mod Sync")
+        self.setWindowTitle(f"{APP_NAME} {APP_VERSION}")
         self.setFixedSize(900, 420)
 
         # cached decryptor (DLL loaded once)
@@ -204,13 +206,13 @@ class ModSyncApp(QWidget):
     def show_about(self):
         QMessageBox.information(
             self,
-            "About ETS2 Mod Sync",
+            f"About {APP_NAME}",
             (
-                "<b>ETS2 Mod Sync</b><br>"
-                "Version 0.1 Beta<br><br>"
+                f"<b>{APP_NAME}</b><br>"
+                f"Version {APP_VERSION}<br><br>"
                 "Sync active mods between ETS2 profiles.<br><br>"
                 "<b>Author</b><br>"
-                "Pratik Patel (predator)<br><br>"
+                f"{APP_AUTHOR}<br><br>"
                 "<b>Credits</b><br>"
                 "SII_Decrypt.dll by TheLazyTomcat"
             )

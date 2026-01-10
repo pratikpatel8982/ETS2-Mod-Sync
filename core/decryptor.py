@@ -1,6 +1,6 @@
 from pathlib import Path
 
-import decrypt_truck
+from decrypt_truck.decrypt_truck import decrypt_sii_bytes
 
 
 class SiiDecryptor:
@@ -25,7 +25,7 @@ class SiiDecryptor:
         data = Path(input_path).read_bytes()
 
         # Call Rust (bytes -> bytes)
-        decrypted = decrypt_truck.decrypt_sii_bytes(data)
+        decrypted = decrypt_sii_bytes(data)
 
         # Decode to text exactly like before
         return decrypted.decode("utf-8", errors="replace")

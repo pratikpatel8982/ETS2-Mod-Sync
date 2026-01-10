@@ -1,0 +1,10 @@
+[build-system]
+requires = ["maturin>=1.5"]
+build-backend = "maturin"
+
+[tool.maturin]
+# This tells maturin:
+# - build a native Python extension
+# - using Cargo
+# - enabling the "python" feature
+features = ["python"]

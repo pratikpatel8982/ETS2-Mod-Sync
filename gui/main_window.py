@@ -1,12 +1,9 @@
-import os
-import sys
 from pathlib import Path
 
 from gui import resources_rc  # DO NOT REMOVE (registers Qt resources)
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QApplication,
     QWidget,
     QPushButton,
     QFileDialog,

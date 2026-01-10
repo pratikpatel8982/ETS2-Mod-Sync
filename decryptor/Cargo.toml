@@ -42,7 +42,7 @@ cipher = { version = "0.4.4", features = ["block-padding"] }
 flate2 = "1.1.5"
 itoa = "1.0.17"
 rayon = "1.11.0"
-pyo3 = { version = "0.20", optional = true }
+pyo3 = { version = "0.20", optional = true, features = ["extension-module"] }
 
 # --------------------
 # Build dependencies (CLI + Windows only)

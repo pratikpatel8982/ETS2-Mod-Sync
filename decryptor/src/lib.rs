@@ -54,12 +54,16 @@ pub fn decrypt_bin_file(file_bin: &Vec<u8>) -> Result<Vec<u8>, String> {
 // =====================================================
 #[cfg(feature = "python")]
 use pyo3::prelude::*;
+#[cfg(feature = "python")]
+use pyo3::types::PyBytes;
 
 #[cfg(feature = "python")]
 #[pyfunction]
-fn decrypt_sii_bytes(data: &[u8]) -> PyResult<Vec<u8>> {
-    decrypt_bin_file(&data.to_vec())
-        .map_err(|e| pyo3::exceptions::PyValueError::new_err(e))
+fn decrypt_sii_bytes(py: Python<'_>, data: &[u8]) -> PyResult<Py<PyBytes>> {
+    let decrypted = decrypt_bin_file(&data.to_vec())
+        .map_err(|e| pyo3::exceptions::PyValueError::new_err(e))?;
+
+    Ok(PyBytes::new(py, &decrypted).into())
 }
 
 #[cfg(feature = "python")]

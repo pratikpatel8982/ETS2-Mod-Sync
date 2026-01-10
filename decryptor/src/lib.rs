@@ -3,12 +3,14 @@ mod strucs;
 mod utils;
 
 use decoder::bsii_decoder::decode;
-
 use strucs::data_sii::SignatureType;
 use utils::aes::decrypt;
 use utils::file_type::try_read_u32;
 use utils::zlib::uncompress;
 
+// ==========================
+// Core Rust API (UNCHANGED)
+// ==========================
 pub fn decrypt_bin_file(file_bin: &Vec<u8>) -> Result<Vec<u8>, String> {
     let file_type = match try_read_u32(file_bin) {
         Ok(res) => res,
@@ -45,4 +47,24 @@ pub fn decrypt_bin_file(file_bin: &Vec<u8>) -> Result<Vec<u8>, String> {
     } else {
         Err("Invalid file type".to_string())
     }
+}
+
+// =====================================================
+// PyO3 bindings (ONLY compiled with feature = "python")
+// =====================================================
+#[cfg(feature = "python")]
+use pyo3::prelude::*;
+
+#[cfg(feature = "python")]
+#[pyfunction]
+fn decrypt_sii_bytes(data: &[u8]) -> PyResult<Vec<u8>> {
+    decrypt_bin_file(&data.to_vec())
+        .map_err(|e| pyo3::exceptions::PyValueError::new_err(e))
+}
+
+#[cfg(feature = "python")]
+#[pymodule]
+fn decrypt_truck(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(decrypt_sii_bytes, m)?)?;
+    Ok(())
 }

@@ -2,7 +2,7 @@ import os
 import sys
 from pathlib import Path
 
-import resources_rc  # DO NOT REMOVE (registers Qt resources)
+from gui import resources_rc  # DO NOT REMOVE (registers Qt resources)
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
@@ -23,18 +23,18 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import QSize
 
-from decryptor import SiiDecryptor
-from mod_sync import (
+from core.decryptor import SiiDecryptor
+from core.mod_sync import (
     get_mods_from_decrypted_text,
     replace_mods_in_text
 )
 
-from modlist_xml import (
+from core.modlist_xml import (
     export_mods_to_xml,
     import_mods_from_xml,
 )
 
-from version import APP_NAME, APP_VERSION, APP_AUTHOR
+from core.version import APP_NAME, APP_VERSION, APP_AUTHOR
 
 class ModSyncApp(QWidget):
     def __init__(self):

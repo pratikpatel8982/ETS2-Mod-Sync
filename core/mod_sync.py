@@ -1,5 +1,5 @@
 # mod_sync.py
-from sii_parser import extract_profile_block, extract_active_mods
+from core.sii_parser import extract_profile_block, extract_active_mods
 
 def get_mods_from_decrypted_text(text: str) -> list[str]:
     block = extract_profile_block(text)

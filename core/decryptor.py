@@ -1,45 +1,31 @@
-# decryptor.py
-import ctypes
-import os
-import tempfile
 from pathlib import Path
 
-DLL_NAME = "SII_Decrypt.dll"
+import decrypt_truck
+
 
 class SiiDecryptor:
+    """
+    Drop-in replacement for the old DLL-based decryptor.
+
+    Public behavior:
+    - decrypt_to_string(path) -> str
+    - raises exceptions on failure
+
+    Internals:
+    - Rust handles bytes -> bytes
+    - Python handles file I/O and text decoding
+    """
+
     def __init__(self):
-        self.dll = ctypes.WinDLL(os.path.abspath(DLL_NAME))
-
-        self.dll.Decryptor_Create.restype = ctypes.c_void_p
-        self.dll.Decryptor_Free.argtypes = [ctypes.c_void_p]
-
-        self.dll.Decryptor_DecryptAndDecodeFile.argtypes = [
-            ctypes.c_void_p,
-            ctypes.c_char_p,
-            ctypes.c_char_p,
-        ]
+        # No state needed; Rust module is loaded once by Python
+        pass
 
     def decrypt_to_string(self, input_path: str) -> str:
-        # Create a temp path WITHOUT opening the file
-        fd, tmp_path = tempfile.mkstemp(suffix=".sii")
-        os.close(fd)  # IMPORTANT: close immediately
+        # Read file as bytes (same responsibility Python had before)
+        data = Path(input_path).read_bytes()
 
-        try:
-            dec = self.dll.Decryptor_Create()
+        # Call Rust (bytes -> bytes)
+        decrypted = decrypt_truck.decrypt_sii_bytes(data)
 
-            self.dll.Decryptor_DecryptAndDecodeFile(
-                dec,
-                input_path.encode("mbcs"),
-                tmp_path.encode("mbcs"),
-            )
-
-            self.dll.Decryptor_Free(dec)
-
-            text = Path(tmp_path).read_text(encoding="utf-8", errors="replace")
-            return text
-
-        finally:
-            try:
-                os.remove(tmp_path)
-            except OSError:
-                pass
+        # Decode to text exactly like before
+        return decrypted.decode("utf-8", errors="replace")

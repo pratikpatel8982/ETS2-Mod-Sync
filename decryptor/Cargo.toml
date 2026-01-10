@@ -7,7 +7,6 @@ license = "MIT"
 authors = ["SiberianCoffe <siberiancoffe@outlook.cl>"]
 repository = "https://github.com/CoffeSiberian/DecryptTruck"
 homepage = "https://github.com/CoffeSiberian/DecryptTruck"
-readme = "README.md"
 
 # --------------------
 # Library (always built)
@@ -15,7 +14,7 @@ readme = "README.md"
 [lib]
 name = "decrypt_truck"
 path = "src/lib.rs"
-crate-type = ["rlib"]
+crate-type = ["cdylib", "rlib"]
 
 # --------------------
 # Optional CLI (disabled by default)

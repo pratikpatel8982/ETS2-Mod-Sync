@@ -7,4 +7,5 @@ build-backend = "maturin"
 # - build a native Python extension
 # - using Cargo
 # - enabling the "python" feature
+bindings = "pyo3"
 features = ["python"]

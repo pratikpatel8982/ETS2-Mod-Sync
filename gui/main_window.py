@@ -390,10 +390,3 @@ class ModSyncApp(QWidget):
         QMessageBox.information(
             self, "Exported", f"Exported {len(self.source_mods)}  to:\n\n{out_path}"
         )
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    app.setWindowIcon(QIcon(":/icons/app.ico"))
-    window = ModSyncApp()
-    window.show()
-    sys.exit(app.exec())

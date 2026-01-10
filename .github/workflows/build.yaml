@@ -1,0 +1,112 @@
+name: Build ETS2 Mod Sync
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt update
+          sudo apt install -y python3-dev patchelf
+
+      - name: Create virtual environment
+        run: python -m venv .venv
+
+      - name: Activate venv & install deps (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          .venv\Scripts\activate
+          pip install --upgrade pip
+          pip install maturin pyinstaller pyside6
+        shell: cmd
+
+      - name: Activate venv & install deps (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install maturin pyinstaller pyside6
+
+      # -----------------------
+      # Build Rust decryptor
+      # -----------------------
+      - name: Build Rust decryptor (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          .venv\Scripts\activate
+          cd decryptor
+          maturin develop
+        shell: cmd
+
+      - name: Build Rust decryptor (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          source .venv/bin/activate
+          cd decryptor
+          maturin develop
+
+      # -----------------------
+      # PyInstaller build
+      # -----------------------
+      - name: Build Windows EXE
+        if: runner.os == 'Windows'
+        run: |
+          .venv\Scripts\activate
+          pyinstaller --noconfirm --onefile --windowed --icon=icons\app.ico --name ETS2_Mod_Sync --hidden-import=decrypt_truck.decrypt_truck --add-binary ".venv\Lib\site-packages\decrypt_truck\decrypt_truck*.pyd;decrypt_truck" main.py
+        shell: cmd
+
+      - name: Build Linux binary
+        if: runner.os == 'Linux'
+        run: |
+          source .venv/bin/activate
+          pyinstaller --noconfirm --onefile --windowed --name ETS2_Mod_Sync --hidden-import=decrypt_truck.decrypt_truck --add-binary ".venv/lib/python*/site-packages/decrypt_truck/decrypt_truck*.so:decrypt_truck" main.py
+
+      - name: Build macOS app
+        if: runner.os == 'macOS'
+        run: |
+          source .venv/bin/activate
+          pyinstaller --noconfirm --onedir --windowed --name ETS2_Mod_Sync --hidden-import=decrypt_truck.decrypt_truck --add-binary ".venv/lib/python*/site-packages/decrypt_truck/decrypt_truck*.so:decrypt_truck" main.py
+
+      # -----------------------
+      # Package artifacts
+      # -----------------------
+      - name: Rename artifacts
+        run: |
+          mkdir release
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            mv dist/ETS2_Mod_Sync.exe release/ETS2_Mod_Sync-win64.exe
+          elif [ "$RUNNER_OS" == "Linux" ]; then
+            mv dist/ETS2_Mod_Sync release/ETS2_Mod_Sync-linux-x64
+          else
+            ditto -c -k --sequesterRsrc --keepParent dist/ETS2_Mod_Sync.app release/ETS2_Mod_Sync-macos.app.zip
+          fi
+        shell: bash
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ETS2_Mod_Sync-${{ runner.os }}
+          path: release/*

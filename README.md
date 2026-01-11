@@ -6,8 +6,6 @@ It allows you to select a source and target profile, preview their active mods, 
 
 The application uses a **native Rust decryptor** for fast, cross-platform profile decryption — no external DLLs required.
 
----
-
 ## ✨ Features
 
 - Simple and lightweight **Qt (PySide6) GUI**
@@ -40,3 +38,64 @@ python -m venv .venv
 pip install maturin PySide6
 cd decryptor
 maturin develop
+```
+
+### Run the application
+From the project root:
+```bash
+python main.py
+```
+---
+
+## 📄 Supported File Types
+
+- `.sii` — ETS2 profile files
+- `.xml` — Mod list export/import format
+---
+
+## 🧠 How It Works
+
+- Profiles are decrypted in memory using a native Rust library.
+- Active mods are parsed into an internal structure.
+- Mod lists can be:
+  - previewed
+  - exported to XML
+  - imported from XML
+  - synchronized between profiles
+- Only the final modified profile file is written to disk.
+---
+
+## 🧭 Planned Features
+
+- Manual mod reordering
+- Swapping Betwwen Profiles
+- Drag and Drop Feature 
+---
+
+## 🛠️ Built With
+
+- Python
+- PySide6 (Qt)
+- Rust
+- PyO3 + maturin
+---
+
+## 📦 Credits
+
+**[DecryptTruck](https://github.com/CoffeSiberian/DecryptTruck)** by **CoffeeSiberian**
+
+A fast library used to decrypt game saves on ETS2 and ATS and used as the native backend for fast and cross-platform profile decryption.
+
+---
+
+## ⚠️ Disclaimer
+
+This project is **not affiliated with or endorsed by SCS Software**. Euro Truck Simulator 2 is a trademark of **SCS Software**. Use at your own risk. Always keep backups of your profiles.
+
+---
+
+## 📜 License
+
+This project is released under the **GPL-3.0**. See `LICENSE` file for details.
+
+---

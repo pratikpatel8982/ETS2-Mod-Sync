@@ -1,0 +1,10 @@
+[project]
+name = "ets2-mod-sync"
+version = "0.3"
+description = "A lightweight GUI tool to sync active mod lists between ETS2 profiles."
+readme = "README.md"
+requires-python = ">=3.9,<3.13"
+dependencies = [
+    "maturin>=1.11.5",
+    "pyside6>=6.10.1",
+]

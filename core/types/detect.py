@@ -36,4 +36,12 @@ def detect_type(path: str) -> str:
         if header.startswith(sig):
             return "sii_encrypted"
 
+    for raw_line in header.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+
+        if line.startswith(b"{"):
+            return "json"
+
     raise ValueError("Unknown or unsupported file format")

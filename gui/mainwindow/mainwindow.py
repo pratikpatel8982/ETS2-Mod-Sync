@@ -88,13 +88,16 @@ class ModSyncApp(QWidget, MainWindowUI):
             color = "#4CAF50"  # green
         elif name == "TXTModSource":
             label = "TXT"
-            color = "#9C27B0"  # purple
+            color = "#316680"  # blue-gray
+        elif name == "JSONModSource":
+            label = "JSON"
+            color = "#FFB300"  # amber
         elif name == "SIIModSource":
             label = "Profile"
             color = "#2196F3"  # blue
         else:
             label = "Unknown"
-            color = "#aaa"
+            color = "#9E9E9E" # neutral grey
 
         self.source_badge.setText(
             f'Source: <span style="color:{color};"><b>{label}</b></span>'
@@ -109,7 +112,7 @@ class ModSyncApp(QWidget, MainWindowUI):
     def load_source(self):
         path, _ = QFileDialog.getOpenFileName(
             self,
-            "Load Source (Profile or XML)",
+            "Load Source (Profile or ModList)",
             "",
             "All supported files (*)",
         )
@@ -168,7 +171,7 @@ class ModSyncApp(QWidget, MainWindowUI):
             self,
             "Export Mods",
             "modlist.xml",
-            "XML Mod List (*.xml);;Text Mod List (*.txt)",
+            "XML Mod List (*.xml);;Text Mod List (*.txt);;JSON Mod List (*.json)",
         )
         if not out_path:
             return
@@ -182,7 +185,9 @@ class ModSyncApp(QWidget, MainWindowUI):
             elif selected_filter.startswith("Text"):
                 from core.types.txt import TXTModSource
                 TXTModSource("").save(self.source_mods, out_path)
-
+            elif selected_filter.startswith("JSON"):
+                from core.types.json import JSONModSource
+                JSONModSource("").save(self.source_mods, out_path)
             else:
                 raise ValueError("Unsupported export format")
 

@@ -5,6 +5,8 @@ __pycache__/
 
 # ETS2
 *.xml
+*.txt
+*.json
 *.sii
 
 # C extensions

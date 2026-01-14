@@ -38,17 +38,17 @@ class MainWindowUI:
         self.source_badge = QLabel("Source: —")
 
         self.load_source_profile_btn = QPushButton("Load Profile")
-        self.load_source_xml_btn = QPushButton("Load XML")
-        self.export_btn = QPushButton("Export Mods (XML)")
+        self.import_btn = QPushButton("Import Mods")
+        self.export_btn = QPushButton("Export Mods")
 
         self.source_table = self._create_table()
 
-        source_box = QGroupBox("Source (Profile / XML)")
+        source_box = QGroupBox("Source")
         source_layout = QGridLayout(source_box)
         source_layout.addWidget(self.source_edit, 0, 0, 1, 2)
         source_layout.addWidget(self.source_badge, 1, 0, 1, 2)
         source_layout.addWidget(self.load_source_profile_btn, 2, 0)
-        source_layout.addWidget(self.load_source_xml_btn, 2, 1)
+        source_layout.addWidget(self.import_btn, 2, 1)
         source_layout.addWidget(self.source_table, 3, 0, 1, 2)
         source_layout.addWidget(self.export_btn, 4, 0, 1, 2)
 

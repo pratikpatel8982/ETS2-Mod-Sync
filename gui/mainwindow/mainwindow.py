@@ -86,6 +86,9 @@ class ModSyncApp(QWidget, MainWindowUI):
         if name == "XMLModSource":
             label = "XML"
             color = "#4CAF50"  # green
+        elif name == "TXTModSource":
+            label = "TXT"
+            color = "#9C27B0"  # purple
         elif name == "SIIModSource":
             label = "Profile"
             color = "#2196F3"  # blue
@@ -161,19 +164,28 @@ class ModSyncApp(QWidget, MainWindowUI):
             QMessageBox.warning(self, "No Mods", "No source mods to export.")
             return
 
-        out_path, _ = QFileDialog.getSaveFileName(
+        out_path, selected_filter = QFileDialog.getSaveFileName(
             self,
             "Export Mods",
             "modlist.xml",
-            "XML Mod List (*.xml)",
+            "XML Mod List (*.xml);;Text Mod List (*.txt)",
         )
         if not out_path:
             return
 
         try:
-            # XMLModSource handles schema correctly
-            from core.types.xml import XMLModSource
-            XMLModSource("").save(self.source_mods, out_path)
+            # Decide exporter by chosen filter / extension
+            if selected_filter.startswith("XML"):
+                from core.types.xml import XMLModSource
+                XMLModSource("").save(self.source_mods, out_path)
+
+            elif selected_filter.startswith("Text"):
+                from core.types.txt import TXTModSource
+                TXTModSource("").save(self.source_mods, out_path)
+
+            else:
+                raise ValueError("Unsupported export format")
+
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
             return

@@ -20,6 +20,14 @@ def detect_type(path: str) -> str:
         if stripped.startswith(sig):
             return "xml"
 
+    for raw_line in header.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+
+        if line.startswith(b"active_mods"):
+            return "txt"
+
     for sig in SII_PLAINTEXT_HEADERS:
         if header.startswith(sig):
             return "sii_plain"

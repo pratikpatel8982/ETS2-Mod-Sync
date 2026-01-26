@@ -15,6 +15,26 @@ class MainWindowUI:
         self.layout = QGridLayout(parent)
 
         # ---------- Top bar ----------
+        
+        # SETTINGS
+        self.settings_btn = QToolButton()
+        self.settings_btn.setIcon(QIcon(":/icons/settings.png"))
+        self.settings_btn.setIconSize(QSize(25, 25))
+        self.settings_btn.setFixedSize(25, 25)
+        self.settings_btn.setToolTip("Settings")
+        self.settings_btn.setStyleSheet("""
+            QToolButton {
+                border: none;
+                background-color: transparent;
+                padding: 0px;
+            }
+            QToolButton:hover {
+                background-color: rgba(255, 255, 255, 0.08);
+                border-radius: 12px;
+            }
+        """)
+
+        # ABOUT
         self.about_btn = QToolButton()
         self.about_btn.setIcon(QIcon(":/icons/info.png"))
         self.about_btn.setIconSize(QSize(25, 25))
@@ -30,6 +50,7 @@ class MainWindowUI:
 
         top_bar = QHBoxLayout()
         top_bar.addStretch()
+        top_bar.addWidget(self.settings_btn)
         top_bar.addWidget(self.about_btn)
         self.layout.addLayout(top_bar, 0, 0, 1, 4)
 

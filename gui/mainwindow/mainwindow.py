@@ -9,7 +9,7 @@ from core.version import APP_NAME, APP_VERSION
 
 from gui.mainwindow.mainwindow_ui import MainWindowUI
 from gui.dialogs.about_dialog import AboutDialog
-
+from gui.dialogs.settings_dialog import SettingsDialog
 
 class ModSyncApp(QWidget, MainWindowUI):
     def __init__(self):
@@ -29,12 +29,17 @@ class ModSyncApp(QWidget, MainWindowUI):
         self._update_buttons_state()
 
     def _connect_signals(self):
+        self.settings_btn.clicked.connect(self.show_settings)
         self.about_btn.clicked.connect(self.show_about)
         self.load_source_profile_btn.clicked.connect(self.load_source)
         self.import_btn.clicked.connect(self.load_source)
         self.load_target_btn.clicked.connect(self.load_target_profile)
         self.export_btn.clicked.connect(self.export_mods)
         self.sync_btn.clicked.connect(self.run_sync)
+
+    
+    def show_settings(self):
+        SettingsDialog(self).exec()
 
     # ---------- About ----------
     def show_about(self):

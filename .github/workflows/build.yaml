@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - "*"
+  pull_request:    
   workflow_dispatch:
 
 permissions:
@@ -115,4 +116,5 @@ jobs:
         with:
           files: release/*
         env:
+
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
